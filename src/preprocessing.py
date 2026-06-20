@@ -1,6 +1,7 @@
 import pandas as pd
 import re
-
+from sklearn.model_selection import train_test_split
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 def missing_values(self):
         missing = self.df.isnull().sum()
 
@@ -192,3 +193,113 @@ def clean_narratives(df):
     print("Consumer complaint narratives cleaned successfully.")
 
     return df
+
+
+
+
+def create_stratified_sample(df, sample_size=10000, random_state=42):
+    """
+    Create a stratified sample while preserving the distribution
+    of product categories.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Cleaned complaint dataset.
+    sample_size : int
+        Number of complaints to sample.
+    random_state : int
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Stratified sample.
+    """
+
+    sample_fraction = sample_size / len(df)
+
+    _, sample = train_test_split(
+        df,
+        test_size=sample_fraction,
+        stratify=df["Product Category"],
+        random_state=random_state
+    )
+
+    return sample.reset_index(drop=True)
+
+def chunk_text(
+    text,
+    chunk_size,
+    chunk_overlap
+):
+    """
+    Split a complaint narrative into overlapping text chunks.
+
+    Parameters
+    ----------
+    text : str
+        Complaint narrative.
+
+    chunk_size : int
+        Maximum number of characters per chunk.
+
+    chunk_overlap : int
+        Number of overlapping characters between chunks.
+
+    Returns
+    -------
+    list
+        List of text chunks.
+    """
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        separators=[
+            "\n\n",
+            "\n",
+            ". ",
+            " ",
+            ""
+        ]
+    )
+
+    return splitter.split_text(text)
+
+def chunk_dataset(
+    df,
+    text_column="Consumer complaint narrative",
+    chunk_size=500,
+    chunk_overlap=50
+):
+    """
+    Split every complaint into multiple chunks.
+
+    Returns
+    -------
+    DataFrame
+        One row per text chunk.
+    """
+
+    chunked_rows = []
+
+    for _, row in df.iterrows():
+
+        chunks = chunk_text(
+            row[text_column],
+            chunk_size,
+            chunk_overlap
+        )
+
+        for idx, chunk in enumerate(chunks):
+
+            new_row = row.copy()
+
+            new_row["chunk"] = chunk
+            new_row["chunk_index"] = idx
+            new_row["total_chunks"] = len(chunks)
+
+            chunked_rows.append(new_row)
+
+    return pd.DataFrame(chunked_rows)
