@@ -7,6 +7,9 @@ __pycache__/
 *.so
 data/
 *.csv
+
+node_modules/
+vector_store/
 # Distribution / packaging
 .Python
 build/
