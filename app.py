@@ -28,7 +28,6 @@ if "history" not in st.session_state:
 # --------------------------------------------------
 
 st.title("💬 CrediTrust Complaint Assistant")
-st.success("NEW APP VERSION LOADED")
 
 st.markdown("""
 Ask questions about customer complaints related to:
