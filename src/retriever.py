@@ -1,12 +1,15 @@
 from sentence_transformers import SentenceTransformer
 import chromadb
+from pathlib import Path
+
 
 
 class ComplaintRetriever:
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
     def __init__(
         self,
-        persist_directory="../data/vector_store",
+        persist_directory=(PROJECT_ROOT/"data"/"vector_store"),
         collection_name="complaints"
     ):
 
@@ -14,22 +17,15 @@ class ComplaintRetriever:
             "sentence-transformers/all-MiniLM-L6-v2"
         )
 
-        client = chromadb.PersistentClient(
+        chroma_client = chromadb.PersistentClient(
             path=persist_directory
         )
 
-        self.collection = client.get_collection(
+        self.collection = chroma_client.get_collection(
             collection_name
         )
 
-    def retrieve(
-        self,
-        question,
-        k=5
-    ):
-        """
-        Retrieve top-k relevant complaint chunks.
-        """
+    def retrieve(self, question, k=5):
 
         query_embedding = self.embedding_model.encode(
             question,
@@ -42,19 +38,3 @@ class ComplaintRetriever:
         )
 
         return results
-    def get_context(
-        self,
-        question,
-        k=5
-    ):
-
-        results = self.retrieve(
-            question,
-            k=k
-        )
-
-        context = "\n\n".join(
-            results["documents"][0]
-        )
-
-        return context, results
